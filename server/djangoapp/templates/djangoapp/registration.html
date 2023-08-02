@@ -5,7 +5,47 @@
     {% load static %}
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
 </head>
-    <body>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <div class="navbar-brand">Car Dealership</div>
+        <div class="collapse navbar-collapse">
+            <ul class="navbar-nav mr-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'djangoapp:index' %}">Home</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'djangoapp:about' %}">About Us</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'djangoapp:contact' %}">Contact Us</a>
+                </li>
+            </ul>
+        </div>
+    </nav>
     <!--Add a registration form here -->
-    </body>
+    <div class="container mt-4">
+        <h1>Sign Up</h1>
+        <hr>
+        <form action="{% url 'djangoapp:registration' %}" method="post">
+            <div class="form-group">
+                <label for="username" class="font-weight-bold">Username</label>
+                <input type="text" class="form-control" name="username" placeholder="Enter User Name: " required>
+            </div>
+            <div class="form-group">
+                <label for="firstName" class="font-weight-bold">First Name</label>
+                <input type="text" class="form-control" name="firstname" placeholder="Enter First Name: " required>
+            </div>
+            <div class="form-group">
+                <label for="lastName" class="font-weight-bold">Last Name</label>
+                <input type="text" class="form-control" name="lastname" placeholder="Enter Last Name: " required>
+            </div>
+            <div class="form-group">
+                <label for="password" class="font-weight-bold">Password</label>
+                <input type="password" class="form-control" name="psw" placeholder="Enter Password: " required>
+            </div>
+            {% csrf_token %}
+            <button type="submit" class="btn btn-primary">Sign Up</button>
+        </form>
+    </div>
+</body>
 </html>
