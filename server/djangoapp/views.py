@@ -10,7 +10,7 @@ from datetime import datetime
 import logging
 import json
 
-from .restapis import get_dealers_from_cf, get_dealer_reviews_from_cf
+from .restapis import get_dealers_from_cf, get_dealer_reviews_from_cf, post_request
 
 # Get an instance of a logger
 logger = logging.getLogger(__name__)
@@ -119,10 +119,42 @@ def get_dealer_details(request, dealer_id):
         print('Dealers', dealers)
         # Concat all dealer's short name
         reviews = ' '.join([dealer.review for dealer in dealers])
+        sentiments = ' '.join([dealer.sentiment for dealer in dealers])
         # Return a list of dealer short name
-        return HttpResponse(reviews)
+        return HttpResponse(reviews + ' ' + sentiments)
 
 # Create a `add_review` view to submit a review
-# def add_review(request, dealer_id):
-# ...
-
+def add_review(request, dealer_id):
+    if request.method == "POST":
+        user = request.user
+        if user.is_authenticated:
+            params = request.params
+            car = CarModel.objects.get(id = params.car)
+            # review = {
+            #     "dealership": dealer_id,
+            #     "name": params.name,
+            #     "review": params.review,
+            #     "purchase": params.purchase,
+            #     "purchase_date": params.purchase_date,
+            #     "car_make": car.make.name,
+            #     "car_model": car.name,
+            #     "car_year": car.year.strftime("%Y")
+            # }
+            review = {
+                "dealership": dealer_id,
+                "name": "Upkar Lidder",
+                "review": "Great service!",
+                "purchase": False,
+                "purchase_date": "02/16/2021",
+                "car_make": "Audi",
+                "car_model": "Car",
+                "car_year": 2021
+            }
+            json_payload = {
+                "review": review
+            }
+            # Post dealers review
+            url = "https://au-syd.functions.appdomain.cloud/api/v1/web/c01ad1b8-f8ce-418a-8abf-5722a3a29abe/dealership-package/post-review"
+            post_review = post_request(url, json_payload, dealerId=dealer_id)
+            print('Post review response', post_review)
+            return post_review

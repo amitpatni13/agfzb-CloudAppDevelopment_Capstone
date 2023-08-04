@@ -12,19 +12,11 @@ def get_request(url, **kwargs):
     print("GET from {} ".format(url))
     try:
         # Call get method of requests library with URL and parameters
-        if api_key:
-            response = requests.get(
-                url, 
-                headers={'Content-Type': 'application/json'},
-                params=kwargs,
-                auth=HTTPBasicAuth('apikey', api_key)
-            )
-        else:
-            response = requests.get(
-                url, 
-                headers={'Content-Type': 'application/json'},
-                params=kwargs
-            )
+        response = requests.get(
+            url,
+            headers={'Content-Type': 'application/json'},
+            params=kwargs
+        )
     except:
         # If any error occurs
         print("Network exception occurred")
@@ -35,6 +27,47 @@ def get_request(url, **kwargs):
 
 # Create a `post_request` to make HTTP POST requests
 # e.g., response = requests.post(url, params=kwargs, json=payload)
+def post_request(url, json_payload, **kwargs):
+    print(kwargs)
+    print("POST from {} ".format(url))
+    # Call post method of requests library with URL and parameters
+    try:
+        response = requests.post(
+            url,
+            headers={'Content-Type': 'application/json'},
+            json=json_payload,
+            params=kwargs
+        )
+    except:
+        # If any error occurs
+        print("Network exception occurred")
+    status_code = response.status_code
+    print("With status {} ".format(status_code))
+    json_data = json.loads(response.text)
+    return json_data
+
+# POST request with api key for auth
+def post_request_with_auth(url, api_key, json_payload, **kwargs):
+    print(kwargs)
+    print("POST from {} ".format(url))
+    # Call post method of requests library with URL and parameters
+    try:
+        response = requests.post(
+            url,
+            headers={'Content-Type': 'application/json'},
+            json=json_payload,
+            params=kwargs,
+            auth=HTTPBasicAuth('apikey', api_key)
+        )
+    except:
+        # If any error occurs
+        print("Network exception occurred")
+    status_code = response.status_code
+    print("With status {} ".format(status_code))
+    json_data = json.loads(response.text)
+    return json_data
+
+
 
 
 # Create a get_dealers_from_cf method to get dealers from a cloud function
@@ -149,8 +182,9 @@ def get_dealer_reviews_from_cf(url, dealer_id):
                 car_make=review_doc["car_make"],
                 car_model=review_doc["car_model"],
                 car_year=review_doc["car_year"],
-                sentiment=analyze_review_sentiments(review_doc["review"])
+                sentiment=''
             )
+            review_obj.sentiment = analyze_review_sentiments(review_obj.review)
             results.append(review_obj)
 
     return results
@@ -159,27 +193,26 @@ def get_dealer_reviews_from_cf(url, dealer_id):
 # - Call get_request() with specified arguments
 # - Get the returned sentiment label such as Positive or Negative
 def analyze_review_sentiments(dealerreview):
-    url = "https://api.au-syd.natural-language-understanding.watson.cloud.ibm.com/instances/1da8835e-99ac-4453-864b-9878ff0fccb3"
+    sentiment = ''
+
+    url = "https://api.au-syd.natural-language-understanding.watson.cloud.ibm.com/instances/1da8835e-99ac-4453-864b-9878ff0fccb3/v1/analyze"
     api_key = "WaClBXfdLGdmS8WOa37cdzBJ1TnBkXDkke09IhQR5kvO"
-    params = {
+    json_payload = {
         "text": dealerreview,
-        "version": 
         "features": {
-            "sentiment": {
-            }
+            "sentiment": {},
         },
         "language": "en"
-    }  
-    # params = dict()
-    # params["text"] = dealerreview
-    # params["version"] = kwargs["version"]
-    # params["features"] = kwargs["features"]
-    # params["return_analyzed_text"] = kwargs["return_analyzed_text"]
-    # params["language"] = "en"
-    response = requests.get(url, params=params, headers={'Content-Type': 'application/json'},
-                                    auth=HTTPBasicAuth('apikey', api_key))
-    print('NLU Review response', response)
-    return response["sentiment"]["document"]["label"]
+    }
 
+    json_result = post_request_with_auth(
+        url,
+        api_key,
+        json_payload,
+        version="2022-04-07"
+    )
 
+    if "sentiment" in json_result:
+        sentiment = json_result["sentiment"]["document"]["label"]
 
+    return sentiment
