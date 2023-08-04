@@ -100,55 +100,51 @@ def registration_request(request):
 #     if request.method == "GET":
 #         return render(request, 'djangoapp/index.html', context)
 def get_dealerships(request):
+    context = {}
     if request.method == "GET":
         url = "https://au-syd.functions.appdomain.cloud/api/v1/web/c01ad1b8-f8ce-418a-8abf-5722a3a29abe/dealership-package/get-dealership"
         # Get dealers from the URL
         dealerships = get_dealers_from_cf(url)
-        # Concat all dealer's short name
-        dealer_names = ' '.join([dealer.short_name for dealer in dealerships])
-        # Return a list of dealer short name
-        return HttpResponse(dealer_names)
+        
+        context['dealerships'] = dealerships
+        return render(request, 'djangoapp/index.html', context)
 
 
 # Create a `get_dealer_details` view to render the reviews of a dealer
 def get_dealer_details(request, dealer_id):
+    context = {}
     if request.method == "GET":
         url = "https://au-syd.functions.appdomain.cloud/api/v1/web/c01ad1b8-f8ce-418a-8abf-5722a3a29abe/dealership-package/get-review"
-        # Get dealers from the URL
-        dealers = get_dealer_reviews_from_cf(url, dealer_id)
-        print('Dealers', dealers)
-        # Concat all dealer's short name
-        reviews = ' '.join([dealer.review for dealer in dealers])
-        sentiments = ' '.join([dealer.sentiment for dealer in dealers])
-        # Return a list of dealer short name
-        return HttpResponse(reviews + ' ' + sentiments)
+        # Get dealer reviews from the URL
+        reviews = get_dealer_reviews_from_cf(url, dealer_id)
+
+        context['reviews'] = reviews
+        context['dealer_id'] = dealer_id
+        context['dealer'] = get_dealer_detail_infos(dealer_id)
+        return render(request, 'djangoapp/dealer_details.html', context)
 
 # Create a `add_review` view to submit a review
 def add_review(request, dealer_id):
+    context = {}
+    if request.method == "GET":
+        context["dealer_id"] = dealer_id
+        context["dealer"] = get_dealer_detail_infos(dealer_id)
+        context["cars"] = CarModel.objects.all()
+        return render(request, "djangoapp/add_review.html", context)
     if request.method == "POST":
         user = request.user
         if user.is_authenticated:
-            params = request.params
-            car = CarModel.objects.get(id = params.car)
-            # review = {
-            #     "dealership": dealer_id,
-            #     "name": params.name,
-            #     "review": params.review,
-            #     "purchase": params.purchase,
-            #     "purchase_date": params.purchase_date,
-            #     "car_make": car.make.name,
-            #     "car_model": car.name,
-            #     "car_year": car.year.strftime("%Y")
-            # }
+            print('Post params', request.POST)
+            car = CarModel.objects.get(id=request.POST["car"])
             review = {
                 "dealership": dealer_id,
-                "name": "Upkar Lidder",
-                "review": "Great service!",
-                "purchase": False,
-                "purchase_date": "02/16/2021",
-                "car_make": "Audi",
-                "car_model": "Car",
-                "car_year": 2021
+                "name": request.POST["username"],
+                "review": request.POST["review"],
+                "purchase": request.POST["purchase"],
+                "purchase_date": request.POST["purchase_date"],
+                "car_make": car.carmake.name,
+                "car_model": car.name,
+                "car_year": car.year.strftime("%Y")
             }
             json_payload = {
                 "review": review
@@ -157,4 +153,9 @@ def add_review(request, dealer_id):
             url = "https://au-syd.functions.appdomain.cloud/api/v1/web/c01ad1b8-f8ce-418a-8abf-5722a3a29abe/dealership-package/post-review"
             post_review = post_request(url, json_payload, dealerId=dealer_id)
             print('Post review response', post_review)
-            return post_review
+            return redirect("djangoapp:dealer_details", dealer_id=dealer_id)
+
+def get_dealer_detail_infos(dealer_id):
+    url = "https://au-syd.functions.appdomain.cloud/api/v1/web/c01ad1b8-f8ce-418a-8abf-5722a3a29abe/dealership-package/get-dealership"
+    dealerships = get_dealers_from_cf(url)
+    return next(filter(lambda x: x.id == dealer_id, dealerships))

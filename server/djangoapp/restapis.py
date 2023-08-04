@@ -87,6 +87,7 @@ def get_dealers_from_cf(url, **kwargs):
             dealer_doc = dealer
             # Create a CarDealer object with values in `doc` object
             dealer_obj = CarDealer(
+                id=dealer_doc["id"],
                 address=dealer_doc["address"],
                 city=dealer_doc["city"],
                 full_name=dealer_doc["full_name"],
