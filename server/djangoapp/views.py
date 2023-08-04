@@ -116,6 +116,7 @@ def get_dealer_details(request, dealer_id):
         url = "https://au-syd.functions.appdomain.cloud/api/v1/web/c01ad1b8-f8ce-418a-8abf-5722a3a29abe/dealership-package/get-review"
         # Get dealers from the URL
         dealers = get_dealer_reviews_from_cf(url, dealer_id)
+        print('Dealers', dealers)
         # Concat all dealer's short name
         reviews = ' '.join([dealer.review for dealer in dealers])
         # Return a list of dealer short name
